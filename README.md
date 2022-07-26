@@ -65,7 +65,7 @@ The result of the routing algorithm will be exported as JSON.  This response is 
 
 ### Visualization
 
-You can use the basic [webpage](https://electricvehiclechargingcoverage.github.io/OverheadVisualization/EV-Routing-Algorithm) to upload the `output.json` file and get an interactive visualization of the JSON result.
+You can use the basic [webpage](https://electricvehiclechargingcoverage.github.io/EV-Routing-Algorithm) from this repository to upload the `output.json` file and get an interactive visualization of the JSON result.
 
 ### Electric Vehicles
 
