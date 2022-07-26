@@ -1,0 +1,160 @@
+<head>
+    <link
+        rel="stylesheet"
+        href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
+        integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A=="
+        crossorigin=""
+    />
+
+    <script
+        src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"
+        integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA=="
+        crossorigin=""
+    ></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <title>Visualization Tool</title>
+</head>
+<body>
+    <div id="main">
+        <div id="map"></div>
+    </div>
+    <div>
+        <input type="file" name="file-import" title="Import JSON Result" id="file-import" accept=".json" onchange="uploadFile(this.files)"> Select a JSON file to display the routing result.
+    </div>
+</body>
+
+<script>
+    var map = L.map("map").setView([51.163361, 10.447683], 7);
+    var routeLayer = L.layerGroup().addTo(map);
+
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: `&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> <br />
+        <a href="https://github.com/ElectricVehicleChargingCoverage/"> GitHub </a>`,
+    }).addTo(map);
+
+    var popup = L.popup();
+
+    function onMapClick(e) {
+        popup
+            .setLatLng(e.latlng)
+            .setContent(
+                `${e.latlng.lat.toFixed(5).toString()}, ${e.latlng.lng
+                    .toFixed(5)
+                    .toString()}`
+            )
+            .openOn(map);
+    }
+
+    map.on("click", onMapClick);
+
+    function uploadFile(files) {
+        file = files[0];
+        if (file) {
+            var reader = new FileReader();
+            reader.readAsText(file, "UTF-8");
+            reader.onload = function (evt) {
+                jsonData = JSON.parse(evt.target.result);
+                displayJSONResult(jsonData);
+            };
+            reader.onerror = function (evt) {
+                console.error("Error:", evt);
+            };
+        } else {
+            console.warn("No file has been uploaded");
+        }
+    }
+
+    function displayJSONResult(json) {
+        const route = json.routes[0];
+        const latlngs = [];
+        const chargingStops = [];
+        route.legs.forEach((leg) => {
+            const points = leg.points;
+            points.forEach((point) => {
+                latlngs.push([point.latitude, point.longitude]);
+            });
+            if (leg.summary && leg.summary.chargingInformationAtEndOfLeg)
+                chargingStops.push(leg.summary);
+        });
+        displayRoute(latlngs, route.summary, chargingStops);
+    }
+
+    function displayRoute(latlngs, summary, chargingStops) {
+        routeLayer.clearLayers();
+        const polyline = L.polyline(latlngs);
+        polyline.bindPopup(getPopupFromSummary(summary), {
+            maxWidth: "600",
+            className: "route-popup",
+        });
+        polyline.bindTooltip("Click for more information.");
+        polyline.addTo(routeLayer);
+        map.fitBounds(L.featureGroup([polyline]).getBounds());
+        chargingStops.forEach((stop) => {displayChargingStop(stop);});
+    }
+
+    function displayChargingStop(stop) {
+        Object.assign(stop, stop.chargingInformationAtEndOfLeg);
+        stop.chargingInformationAtEndOfLeg = null;
+        const location = [stop.chargingParkLocation.latitude, stop.chargingParkLocation.longitude];
+        var marker = L.marker(location, {
+            title: stop.chargingParkName,
+        }).addTo(routeLayer);
+        L.DomUtil.addClass(
+            marker._icon,
+            `chargingstop-marker`
+        );
+        marker.bindTooltip("Click for more information");
+        marker.bindPopup(
+            `<h2> ${stop.chargingParkName} (${
+                stop.chargingParkExternalId
+            }) </h2> ${getPopupFromSummary(stop)}`,
+            { maxWidth: "600", className: "charger-popup" }
+        );
+    }
+
+    function getPopupFromSummary(summary) {
+        var result = `<h2> Summary </h2>
+        <table> <tr> <th> Attribute </th> <th> Value </th> </tr>`;
+        Object.keys(summary).forEach((key) => {
+            const data = summary[key];
+            if (typeof data === 'object')
+                return;
+            result += `<tr> <td> ${key} </td> <td> ${data} </td></tr>`;
+        });
+        result += "</table>";
+        return result;
+    }
+</script>
+
+<style>
+    body {
+        width: 100%;
+        height: 100%;
+        margin: 0px;
+    }
+    #map {
+        position: fixed;
+        top: 0px;
+        left: 0px;
+        height: calc(100% - 22px);
+        width: 100%;
+    }
+    table {
+        border-collapse: collapse;
+        width: 100%;
+    }
+    th,
+    td {
+        text-align: left;
+        padding: 8px;
+    }
+
+    tr:nth-child(even) {
+        background-color: #f2f2f2;
+    }
+
+    th {
+        background-color: #04aa6d;
+        color: white;
+    }
+</style>

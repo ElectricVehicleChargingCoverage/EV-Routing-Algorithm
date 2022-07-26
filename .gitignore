@@ -1,0 +1,8 @@
+build/*
+.vscode
+!.vscode/settings.json
+
+data/*
+!data/Readme.md
+
+*/__pycache__
