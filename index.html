@@ -11,7 +11,6 @@
         integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA=="
         crossorigin=""
     ></script>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <title>Visualization Tool</title>
 </head>
 <body>
@@ -29,7 +28,7 @@
 
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
         attribution: `&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> <br />
-        <a href="https://github.com/ElectricVehicleChargingCoverage/"> GitHub </a>`,
+        <a href="https://github.com/ElectricVehicleChargingCoverage/EV-Routing-Algorithm"> GitHub </a>`,
     }).addTo(map);
 
     var popup = L.popup();
@@ -124,6 +123,10 @@
         result += "</table>";
         return result;
     }
+    
+    setTimeout(function () { // Fix problem with gray tiles.
+        window.dispatchEvent(new Event('resize'));
+    }, 100);
 </script>
 
 <style>
